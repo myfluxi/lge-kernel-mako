@@ -38,7 +38,6 @@
 #include <linux/irq.h>
 #include <linux/kthread.h>
 #include <linux/wait.h>
-#include <linux/irq.h>
 
 #include <mach/msm_bus.h>
 #include <mach/clk.h>
