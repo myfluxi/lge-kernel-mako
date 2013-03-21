@@ -226,17 +226,13 @@ static void tz_sleep(struct kgsl_device *device,
 	priv->bin.busy_time = 0;
 }
 
+#ifdef CONFIG_MSM_SCM
 static int tz_init(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 {
 	int i = 0, j = 1, ret = 0;
 	struct tz_priv *priv;
 	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
 	unsigned int tz_pwrlevels[KGSL_MAX_PWRLEVELS + 1];
-
-	/* Trustzone is only valid for some SOCs */
-	if (!(cpu_is_msm8x60() || cpu_is_msm8960() || cpu_is_apq8064() ||
-		cpu_is_msm8930() || cpu_is_msm8930aa() || cpu_is_msm8627()))
-		return -EINVAL;
 
 	priv = pwrscale->priv = kzalloc(sizeof(struct tz_priv), GFP_KERNEL);
 	if (pwrscale->priv == NULL)
@@ -261,6 +257,12 @@ static int tz_init(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 		priv->idle_dcvs = 1;
 	return 0;
 }
+#else
+static int tz_init(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
+{
+	return -EINVAL;
+}
+#endif /* CONFIG_MSM_SCM */
 
 static void tz_close(struct kgsl_device *device, struct kgsl_pwrscale *pwrscale)
 {
