@@ -244,7 +244,7 @@ static ssize_t do_kgamma_store(struct device *dev, struct device_attribute *attr
 	int kgamma[10];
 	int i;
 
-	sscanf(buf, "%d %d %d %d %d %d %d %d %d %d",
+	sscanf(buf, "%d %d %d %d %d %d %d %d %d %d\n",
 		&kgamma[0], &kgamma[1], &kgamma[2], &kgamma[3],
 		&kgamma[4], &kgamma[5], &kgamma[6], &kgamma[7],
 		&kgamma[8], &kgamma[9]);
@@ -289,7 +289,7 @@ static ssize_t do_kgamma_show(struct device *dev, struct device_attribute *attr,
 
 	kgamma[0] = (int) calc_checksum(kgamma);
 
-	return sprintf(buf, "%d %d %d %d %d %d %d %d %d %d", 
+	return sprintf(buf, "%d %d %d %d %d %d %d %d %d %d\n",
 		kgamma[0], kgamma[1], kgamma[2], kgamma[3],
 		kgamma[4], kgamma[5], kgamma[6], kgamma[7],
 		kgamma[8], kgamma[9]);
@@ -382,7 +382,7 @@ static int mipi_lgit_lcd_probe(struct platform_device *pdev)
 	}
 
 	// make a copy of platform data
-	memcpy((void*)local_power_on_set_1, (void*)mipi_lgit_pdata->power_on_set_1, 
+	memcpy((void*)local_power_on_set_1, (void*)mipi_lgit_pdata->power_on_set_1,
 		sizeof(local_power_on_set_1));
 
 	pr_info("%s start\n", __func__);
