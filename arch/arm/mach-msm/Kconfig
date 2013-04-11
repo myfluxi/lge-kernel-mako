@@ -1575,11 +1575,11 @@ config MSM_CPU_FREQ_MIN
 
 endif # CPU_FREQ_MSM
 
-config CPU_VOLTAGE_CONTROL
-	bool "Enable userspace CPU Voltage Control"
+config MSM_CPU_VOLTAGE_CONTROL
+	bool "Userspace CPU Voltage Control"
 	default y
 	help
-	  Userspace CPU Voltage Control
+	  This enables userspace CPU Voltage Control
 
 config MSM_CPU_OVERCLOCK
 	bool "Enable CPU overclocking"
