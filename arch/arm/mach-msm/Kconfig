@@ -1581,6 +1581,12 @@ config CPU_VOLTAGE_CONTROL
 	help
 	  Userspace CPU Voltage Control
 
+config MSM_CPU_OVERCLOCK
+	bool "Enable CPU overclocking"
+	default n
+	help
+	  Enable extended CPU frequency table up to 1.72GHz
+
 config MSM_CPU_AVS
 	bool "Enable software controlled Adaptive Voltage Scaling (AVS)"
 	depends on (ARCH_MSM_SCORPION && QSD_SVS)
