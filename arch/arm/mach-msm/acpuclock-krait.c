@@ -825,7 +825,7 @@ static void __init bus_init(const struct l2_level *l2_level)
 #ifdef CONFIG_CPU_FREQ_MSM
 static struct cpufreq_frequency_table freq_table[NR_CPUS][35];
 
-#ifdef CONFIG_CPU_VOLTAGE_CONTROL
+#ifdef CONFIG_MSM_CPU_VOLTAGE_CONTROL
 #define CPU_VDD_MAX		1300
 #define CPU_VDD_MIN		800
 
