@@ -826,8 +826,13 @@ static void __init bus_init(const struct l2_level *l2_level)
 static struct cpufreq_frequency_table freq_table[NR_CPUS][35];
 
 #ifdef CONFIG_MSM_CPU_VOLTAGE_CONTROL
+#ifdef CONFIG_MSM_CPU_OVERCLOCK
+#define CPU_VDD_MAX		1400
+#define CPU_VDD_MIN		700
+#else
 #define CPU_VDD_MAX		1300
 #define CPU_VDD_MIN		800
+#endif
 
 int get_freq_count(void)
 {
