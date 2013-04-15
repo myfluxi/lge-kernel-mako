@@ -965,5 +965,11 @@ config TOUCH_REG_MAP_TM2000
 	default y
 	help
 	  Synaptics Register map TM2000.
+
+config LGE_TOUCH_BOOST
+	bool "Touchboost CPU Frequency"
+	default n
+	help
+	  Enable boosting of CPU frequency on touch events.
 endif
 

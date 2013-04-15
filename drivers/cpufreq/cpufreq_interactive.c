@@ -606,6 +606,15 @@ static void cpufreq_interactive_boost(void)
 		wake_up_process(speedchange_task);
 }
 
+#ifdef CONFIG_LGE_TOUCH_BOOST
+void cpufreq_interactive_touchboost(void)
+{
+	boostpulse_endtime = ktime_to_us(ktime_get()) + boostpulse_duration_val;
+	trace_cpufreq_interactive_boost("pulse");
+	cpufreq_interactive_boost();
+}
+#endif
+
 static int cpufreq_interactive_notifier(
 	struct notifier_block *nb, unsigned long val, void *data)
 {
