@@ -977,5 +977,12 @@ config TOUCHSCREEN_CHARGER_NOTIFY
 	  The touch firmware will use this information to decide whether
 	  a new algorithm to reduce the noise impact needs to be applied
 	  or not.
+
+config LGE_TOUCH_BOOST
+	bool "Touchboost CPU Frequency"
+	default n
+	help
+	  Enable boosting of CPU frequency on touch events.
+
 endif
 

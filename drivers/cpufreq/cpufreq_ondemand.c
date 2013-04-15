@@ -306,6 +306,19 @@ static void ondemand_powersave_bias_init(void)
 	}
 }
 
+#ifdef CONFIG_LGE_TOUCH_BOOST
+void ondemand_touchboost(void)
+{
+	dbs_tuners_ins.boosted = 1;
+	freq_boosted_time = ktime_to_us(ktime_get());
+
+	if (sampling_rate_boosted) {
+		sampling_rate_boosted = 0;
+		dbs_tuners_ins.sampling_rate = current_sampling_rate;
+	}
+}
+#endif
+
 /************************** sysfs interface ************************/
 
 static ssize_t show_sampling_rate_min(struct kobject *kobj,
