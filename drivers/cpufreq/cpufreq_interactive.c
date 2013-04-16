@@ -116,6 +116,22 @@ static int timer_slack_val = DEFAULT_TIMER_SLACK;
 
 static bool io_is_busy;
 
+static unsigned int cur_tune_level;
+
+/*
+ * go_hispeed_load, min_sample_time, timer_rate, above_hispeed_delay
+ */
+static unsigned int gov_tunables[4][4] = {
+	/* suspend */
+	{ 99, 20, 80, 80 },
+	/* low load */
+	{ 99, 40, 40, 40 },
+	/* medium load */
+	{ 95, 60, 20, 20 },
+	/* high load */
+	{ 75, 80, 10, 10 },
+};
+
 static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		unsigned int event);
 
@@ -737,6 +753,22 @@ err:
 	return ERR_PTR(err);
 }
 
+int cpufreq_interactive_load_tuning(unsigned int level)
+{
+	if (level == cur_tune_level)
+		return -1;
+
+	cur_tune_level = level;
+	pr_debug("cpufreq_interactive: tuning level %d\n", level);
+
+	go_hispeed_load = gov_tunables[level][0];
+	min_sample_time = gov_tunables[level][1] * USEC_PER_MSEC;
+	timer_rate = gov_tunables[level][2] * USEC_PER_MSEC;
+	*above_hispeed_delay = gov_tunables[level][3] * USEC_PER_MSEC;
+
+	return 0;
+}
+
 static ssize_t show_target_loads(
 	struct kobject *kobj, struct attribute *attr, char *buf)
 {
@@ -1031,6 +1063,53 @@ static ssize_t store_io_is_busy(struct kobject *kobj,
 static struct global_attr io_is_busy_attr = __ATTR(io_is_busy, 0644,
 		show_io_is_busy, store_io_is_busy);
 
+static ssize_t show_load_tuning(
+	struct kobject *kobj, struct attribute *attr, char *buf)
+{
+	int i, j, len = 0;
+
+	if (!buf)
+		return -EINVAL;
+
+	for (i = 0; i < ARRAY_SIZE(gov_tunables); i++) {
+		len += sprintf(buf + len, "%d ", i);
+		for (j = 0; j < 4; j++)
+			len += sprintf(buf + len, "%d ", gov_tunables[i][j]);
+		len += sprintf(buf + len, "\n");
+	}
+
+	return len;
+}
+
+static ssize_t store_load_tuning(
+	struct kobject *kobj, struct attribute *attr, const char *buf,
+	size_t count)
+{
+	unsigned int val;
+	char size[ARRAY_SIZE(gov_tunables)];
+	int i, row = 0, ret = 0;
+
+	if (!buf)
+		return -EINVAL;
+
+	for (i = 0; i < 5; i++) {
+		ret = sscanf(buf, "%d", &val);
+		if (!ret)
+			return -EINVAL;
+
+		if (i == 0)
+			row = val;
+		else
+			gov_tunables[row][i - 1] = val;
+
+		ret = sscanf(buf, "%s", size);
+		buf += strlen(size) + 1;
+	}
+	return ret;
+}
+
+define_one_global_rw(load_tuning);
+
 static struct attribute *interactive_attributes[] = {
 	&target_loads_attr.attr,
 	&above_hispeed_delay_attr.attr,
@@ -1043,6 +1122,7 @@ static struct attribute *interactive_attributes[] = {
 	&boostpulse.attr,
 	&boostpulse_duration.attr,
 	&io_is_busy_attr.attr,
+	&load_tuning.attr,
 	NULL,
 };
 

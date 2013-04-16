@@ -75,6 +75,23 @@ int sampling_rate_boosted;
 u64 sampling_rate_boosted_time;
 unsigned int current_sampling_rate;
 
+static unsigned int cur_tune_level;
+
+/*
+ * up_threshold, sampling_rate, sampling_down_factor
+ * medium level represents ondemand defaults
+ */
+static unsigned int gov_tunables[4][3] = {
+	/* suspend */
+	{ 99, 120000, 1 },
+	/* low load */
+	{ 95, 80000, 1 },
+	/* medium load */
+	{ 95, 50000, 1 },
+	/* high load */
+	{ 80, 20000, 10 },
+};
+
 static void do_dbs_timer(struct work_struct *work);
 static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				unsigned int event);
@@ -156,6 +173,7 @@ static struct dbs_tuners {
 	unsigned int boosted;
 	unsigned int freq_boost_time;
 	unsigned int boostfreq;
+	unsigned int load_tuning;
 } dbs_tuners_ins = {
 	.up_threshold_multi_core = DEF_FREQUENCY_UP_THRESHOLD,
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
@@ -319,6 +337,21 @@ void ondemand_touchboost(void)
 }
 #endif
 
+int cpufreq_ondemand_load_tuning(unsigned int level)
+{
+	if (level == cur_tune_level)
+		return -1;
+
+	cur_tune_level = level;
+	pr_debug("cpufreq_ondemand: New tunelevel %d\n", level);
+
+	dbs_tuners_ins.up_threshold = gov_tunables[level][0];
+	dbs_tuners_ins.sampling_rate = gov_tunables[level][1];
+	dbs_tuners_ins.sampling_down_factor = gov_tunables[level][2];
+
+	return 0;
+}
+
 /************************** sysfs interface ************************/
 
 static ssize_t show_sampling_rate_min(struct kobject *kobj,
@@ -353,6 +386,24 @@ static ssize_t show_powersave_bias
 (struct kobject *kobj, struct attribute *attr, char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "%d\n", dbs_tuners_ins.powersave_bias);
+}
+
+static ssize_t show_load_tuning
+(struct kobject *kobj, struct attribute *attr, char *buf)
+{
+	int i, j, len = 0;
+
+	if (!buf)
+		return -EINVAL;
+
+	for (i = 0; i < ARRAY_SIZE(gov_tunables); i++) {
+		len += sprintf(buf + len, "%d ", i);
+		for (j = 0; j < 3; j++)
+			len += sprintf(buf + len, "%d ", gov_tunables[i][j]);
+		len += sprintf(buf + len, "\n");
+	}
+
+	return len;
 }
 
 /**
@@ -720,6 +771,32 @@ skip_this_cpu_bypass:
 	return count;
 }
 
+static ssize_t store_load_tuning(struct kobject *a, struct attribute *b,
+				 const char *buf, size_t count)
+{
+	unsigned int input;
+	char size[ARRAY_SIZE(gov_tunables)];
+	int i, row = 0, ret = 0;
+
+	if (!buf)
+		return -EINVAL;
+
+	for (i = 0; i < 4; i++) {
+		ret = sscanf(buf, "%d", &input);
+		if (!ret)
+			return -EINVAL;
+
+		if (i == 0)
+			row = input;
+		else
+			gov_tunables[row][i - 1] = input;
+
+		ret = sscanf(buf, "%s", size);
+		buf += strlen(size) + 1;
+	}
+	return ret;
+}
+
 define_one_global_rw(sampling_rate);
 define_one_global_rw(io_is_busy);
 define_one_global_rw(up_threshold);
@@ -733,6 +810,7 @@ define_one_global_rw(up_threshold_any_cpu_load);
 define_one_global_rw(sync_freq);
 define_one_global_rw(boostpulse);
 define_one_global_rw(boostfreq);
+define_one_global_rw(load_tuning);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
@@ -749,6 +827,7 @@ static struct attribute *dbs_attributes[] = {
 	&sync_freq.attr,
 	&boostpulse.attr,
 	&boostfreq.attr,
+	&load_tuning.attr,
 	NULL
 };
 
