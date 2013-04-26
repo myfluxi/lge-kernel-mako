@@ -90,6 +90,7 @@ static int tr_last_index;
 #define BOOST_TIMER_EXPIRY	25	/* ms */
 extern void ondemand_touchboost(void);
 extern void cpufreq_interactive_touchboost(void);
+extern void conservative_touchboost(void);
 
 struct boost_vals {
 	unsigned int count;
@@ -764,6 +765,8 @@ static void touchboost(void)
 		ondemand_touchboost();
 	else if (!strnicmp(policy->governor->name, "interactive", CPUFREQ_NAME_LEN))
 		cpufreq_interactive_touchboost();
+	else if (!strnicmp(policy->governor->name, "conservative", CPUFREQ_NAME_LEN))
+		conservative_touchboost();
 }
 
 
