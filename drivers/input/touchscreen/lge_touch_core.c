@@ -786,6 +786,11 @@ static void touchboost(void)
 {
 	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 
+#ifdef CONFIG_TOUCHSCREEN_SWEEP2WAKE
+	if (scr_suspended)
+		return;
+#endif
+
 	if (!strnicmp(policy->governor->name, "ondemand", CPUFREQ_NAME_LEN))
 		ondemand_touchboost();
 	else if (!strnicmp(policy->governor->name, "interactive", CPUFREQ_NAME_LEN))
