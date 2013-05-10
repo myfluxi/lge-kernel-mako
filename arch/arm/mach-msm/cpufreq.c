@@ -3,11 +3,7 @@
  * MSM architecture cpufreq driver
  *
  * Copyright (C) 2007 Google, Inc.
-<<<<<<< HEAD
- * Copyright (c) 2007-2012, Code Aurora Forum. All rights reserved.
-=======
  * Copyright (c) 2007-2013, The Linux Foundation. All rights reserved.
->>>>>>> 7ee0ade... msm: cpufreq: Always update frequency limits when core is online
  * Author: Mike A. Chan <mikechan@google.com>
  *
  * This software is licensed under the terms of the GNU General Public
@@ -422,7 +418,8 @@ static int __init msm_cpufreq_register(void)
 	}
 
 #ifdef CONFIG_SMP
-	msm_cpufreq_wq = create_workqueue("msm-cpufreq");
+	msm_cpufreq_wq = alloc_workqueue("msm-cpufreq",
+			WQ_MEM_RECLAIM | WQ_HIGHPRI, 1);
 	register_hotcpu_notifier(&msm_cpufreq_cpu_notifier);
 #endif
 
