@@ -49,7 +49,7 @@ struct kgsl_pwrscale_policy_attribute {
 };
 
 #define PWRSCALE_POLICY_ATTR(_name, _mode, _show, _store)          \
-	struct kgsl_pwrscale_policy_attribute policy_attr_##_name = \
+	static struct kgsl_pwrscale_policy_attribute policy_attr_##_name = \
 		__ATTR(_name, _mode, _show, _store)
 
 extern struct kgsl_pwrscale_policy kgsl_pwrscale_policy_tz;
