@@ -35,8 +35,8 @@ static unsigned long walltime_total = 0;
 static unsigned long busytime_total = 0;
 
 struct gpu_thresh_tbl {
-	const unsigned int up_threshold;
-	const unsigned int down_threshold;
+	unsigned int up_threshold;
+	unsigned int down_threshold;
 };
 
 #define GPU_SCALE(u,d) \
@@ -193,9 +193,55 @@ static ssize_t conservative_polling_interval_store(struct kgsl_device *device, s
 PWRSCALE_POLICY_ATTR(polling_interval, 0644, conservative_polling_interval_show,
 		     conservative_polling_interval_store);
 
+static ssize_t conservative_threshold_table_show(struct kgsl_device *device, struct kgsl_pwrscale
+						 *pwrscale, char *buf)
+{
+	int i, len = 0;
+	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
+
+	if (!buf)
+		return -EINVAL;
+
+	for (i = 0; i < pwr->num_pwrlevels; i++) {
+		len += sprintf(buf + len, "%d ", i);
+		len += sprintf(buf + len, "%3d ", thresh_tbl[i].up_threshold);
+		len += sprintf(buf + len, "%2d", thresh_tbl[i].down_threshold);
+		len += sprintf(buf + len, "\n");
+	}
+
+	return len;
+}
+
+static ssize_t conservative_threshold_table_store(struct kgsl_device *device, struct kgsl_pwrscale
+						  *pwrscale, const char *buf,
+						  size_t count)
+{
+	int err;
+	unsigned int tmp[3];
+
+	err = sscanf(buf, "%d %d %d", &tmp[0], &tmp[1], &tmp[2]);
+
+	if (err != ARRAY_SIZE(tmp))
+		return -EINVAL;
+
+	thresh_tbl[tmp[0]].up_threshold = tmp[1];
+	thresh_tbl[tmp[0]].down_threshold = tmp[2];
+
+	if (g_show_stats == 1)
+		pr_info("%s: level %d new thresholds up: %d, down: %d\n",
+			KGSL_NAME, tmp[0], thresh_tbl[tmp[0]].up_threshold,
+			thresh_tbl[tmp[0]].down_threshold);
+
+	return err;
+}
+
+PWRSCALE_POLICY_ATTR(threshold_table, 0644, conservative_threshold_table_show,
+		     conservative_threshold_table_store);
+
 static struct attribute *conservative_attrs[] = {
 	&policy_attr_print_stats.attr,
 	&policy_attr_polling_interval.attr,
+	&policy_attr_threshold_table.attr,
 	NULL
 };
 
