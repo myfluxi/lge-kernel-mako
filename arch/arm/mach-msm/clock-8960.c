@@ -374,18 +374,24 @@ struct pll_rate {
 
 enum vdd_dig_levels {
 	VDD_DIG_NONE,
+	VDD_DIG_LOWER,
 	VDD_DIG_LOW,
+	VDD_DIG_NOM_LOW,
 	VDD_DIG_NOMINAL,
-	VDD_DIG_HIGH
+	VDD_DIG_HIGH,
+	VDD_DIG_HIGHER
 };
 
 static int set_vdd_dig_8960(struct clk_vdd_class *vdd_class, int level)
 {
 	static const int vdd_uv[] = {
 		[VDD_DIG_NONE]    =       0,
+		[VDD_DIG_LOWER]   =  900000,
 		[VDD_DIG_LOW]     =  945000,
+		[VDD_DIG_NOM_LOW] = 1000000,
 		[VDD_DIG_NOMINAL] = 1050000,
-		[VDD_DIG_HIGH]    = 1150000
+		[VDD_DIG_HIGH]    = 1100000,
+		[VDD_DIG_HIGHER]  = 1150000
 	};
 	return rpm_vreg_set_voltage(RPM_VREG_ID_PM8921_S3, RPM_VREG_VOTER3,
 				    vdd_uv[level], 1150000, 1);
@@ -3521,9 +3527,12 @@ static struct clk_freq_tbl clk_tbl_gfx3d_8930[] = {
 };
 
 static unsigned long fmax_gfx3d_8064[MAX_VDD_LEVELS] __initdata = {
+	[VDD_DIG_LOWER]   = 64000000,
 	[VDD_DIG_LOW]     = 128000000,
+	[VDD_DIG_NOM_LOW] = 200000000,
 	[VDD_DIG_NOMINAL] = 325000000,
-	[VDD_DIG_HIGH]    = 400000000
+	[VDD_DIG_HIGH]    = 400000000,
+	[VDD_DIG_HIGHER]  = 487500000
 };
 
 static unsigned long fmax_gfx3d_8930[MAX_VDD_LEVELS] __initdata = {
@@ -4359,6 +4368,7 @@ static struct clk_freq_tbl clk_tbl_vfe[] = {
 };
 
 static unsigned long fmax_vfe_8064[MAX_VDD_LEVELS] __initdata = {
+	[VDD_DIG_LOWER]   = 64000000,
 	[VDD_DIG_LOW]     = 128000000,
 	[VDD_DIG_NOMINAL] = 266667000,
 	[VDD_DIG_HIGH]    = 320000000

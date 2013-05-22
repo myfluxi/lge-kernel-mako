@@ -51,7 +51,7 @@
 #define ENABLE_VOTED	4	/* Bit pol: 1 = running; delay on disable */
 #define DELAY		5	/* No bit to check, just delay */
 
-#define MAX_VDD_LEVELS			4
+#define MAX_VDD_LEVELS			7
 
 /**
  * struct clk_vdd_class - Voltage scaling class
