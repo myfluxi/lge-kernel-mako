@@ -96,3 +96,10 @@ config MSM_KGSL_DISABLE_SHADOW_WRITES
 	bool "Disable register shadow writes for context switches"
 	default n
 	depends on MSM_KGSL
+
+config MSM_KGSL_OVERCLOCK
+	bool "Enable extended GPU frequency table"
+	depends on MSM_KGSL && MSM_BUS_SCALING
+	---help---
+	  This option will enable additional power levels with higher as
+	  well as lower GPU frequencies and additional 3D bus vectors.

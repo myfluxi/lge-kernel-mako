@@ -48,8 +48,15 @@ struct gpu_thresh_tbl {
 static struct gpu_thresh_tbl thresh_tbl[] = {
 	GPU_SCALE(110, 60),
 	GPU_SCALE(90, 45),
+#ifdef CONFIG_MSM_KGSL_OVERCLOCK
+	GPU_SCALE(80, 40),
+	GPU_SCALE(70, 35),
+	GPU_SCALE(60, 15),
+	GPU_SCALE(25, 0),
+#else
 	GPU_SCALE(75, 35),
 	GPU_SCALE(60, 0),
+#endif
 	GPU_SCALE(100, 0),
 };
 

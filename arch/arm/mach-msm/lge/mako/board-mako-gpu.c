@@ -64,6 +64,21 @@ static struct msm_bus_vectors grp3d_init_vectors[] = {
 	},
 };
 
+static struct msm_bus_vectors grp3d_lower_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_GRAPHICS_3D,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = KGSL_CONVERT_TO_MBPS(800),
+	},
+	{
+		.src = MSM_BUS_MASTER_GRAPHICS_3D_PORT1,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = KGSL_CONVERT_TO_MBPS(800),
+	},
+};
+
 static struct msm_bus_vectors grp3d_low_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_GRAPHICS_3D,
@@ -109,7 +124,7 @@ static struct msm_bus_vectors grp3d_nominal_high_vectors[] = {
 	},
 };
 
-static struct msm_bus_vectors grp3d_max_vectors[] = {
+static struct msm_bus_vectors grp3d_high_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_GRAPHICS_3D,
 		.dst = MSM_BUS_SLAVE_EBI_CH0,
@@ -124,10 +139,29 @@ static struct msm_bus_vectors grp3d_max_vectors[] = {
 	},
 };
 
+static struct msm_bus_vectors grp3d_max_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_GRAPHICS_3D,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = KGSL_CONVERT_TO_MBPS(4800),
+	},
+	{
+		.src = MSM_BUS_MASTER_GRAPHICS_3D_PORT1,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = KGSL_CONVERT_TO_MBPS(4800),
+	},
+};
+
 static struct msm_bus_paths grp3d_bus_scale_usecases[] = {
 	{
 		ARRAY_SIZE(grp3d_init_vectors),
 		grp3d_init_vectors,
+	},
+	{
+		ARRAY_SIZE(grp3d_lower_vectors),
+		grp3d_lower_vectors,
 	},
 	{
 		ARRAY_SIZE(grp3d_low_vectors),
@@ -140,6 +174,10 @@ static struct msm_bus_paths grp3d_bus_scale_usecases[] = {
 	{
 		ARRAY_SIZE(grp3d_nominal_high_vectors),
 		grp3d_nominal_high_vectors,
+	},
+	{
+		ARRAY_SIZE(grp3d_high_vectors),
+		grp3d_high_vectors,
 	},
 	{
 		ARRAY_SIZE(grp3d_max_vectors),
@@ -196,33 +234,52 @@ static struct kgsl_device_iommu_data kgsl_3d0_iommu_data[] = {
 
 static struct kgsl_device_platform_data kgsl_3d0_pdata = {
 	.pwrlevel = {
+#ifdef CONFIG_MSM_KGSL_OVERCLOCK
+		{
+			.gpu_freq = 487500000,
+			.bus_freq = 6,
+			.io_fraction = 0,
+		},
+#endif
 		{
 			.gpu_freq = 400000000,
-			.bus_freq = 4,
+			.bus_freq = 5,
 			.io_fraction = 0,
 		},
 		{
 			.gpu_freq = 325000000,
-			.bus_freq = 3,
+			.bus_freq = 4,
 			.io_fraction = 33,
 		},
 		{
 			.gpu_freq = 200000000,
-			.bus_freq = 2,
+			.bus_freq = 3,
 			.io_fraction = 100,
 		},
 		{
 			.gpu_freq = 128000000,
+			.bus_freq = 2,
+			.io_fraction = 100,
+		},
+#ifdef CONFIG_MSM_KGSL_OVERCLOCK
+		{
+			.gpu_freq = 64000000,
 			.bus_freq = 1,
 			.io_fraction = 100,
 		},
+#endif
 		{
 			.gpu_freq = 27000000,
 			.bus_freq = 0,
 		},
 	},
+#ifdef CONFIG_MSM_KGSL_OVERCLOCK
+	.init_level = 2,
+	.num_levels = 7,
+#else
 	.init_level = 1,
 	.num_levels = 5,
+#endif
 	.set_grp_async = NULL,
 	.idle_timeout = HZ/10,
 	.nap_allowed = true,
