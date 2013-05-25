@@ -25,6 +25,9 @@
 
 #define KGSL_MAX_CLKS 5
 
+#define GPU_VDD_MAX 1200
+#define GPU_VDD_MIN 700
+
 struct platform_device;
 
 struct kgsl_clk_stats {

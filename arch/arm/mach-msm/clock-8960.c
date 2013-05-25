@@ -382,17 +382,18 @@ enum vdd_dig_levels {
 	VDD_DIG_HIGHER
 };
 
+unsigned int vdd_uv[] = {
+	[VDD_DIG_NONE]    =       0,
+	[VDD_DIG_LOWER]   =  800000,
+	[VDD_DIG_LOW]     =  850000,
+	[VDD_DIG_NOM_LOW] =  900000,
+	[VDD_DIG_NOMINAL] =  950000,
+	[VDD_DIG_HIGH]    = 1050000,
+	[VDD_DIG_HIGHER]  = 1100000
+};
+
 static int set_vdd_dig_8960(struct clk_vdd_class *vdd_class, int level)
 {
-	static const int vdd_uv[] = {
-		[VDD_DIG_NONE]    =       0,
-		[VDD_DIG_LOWER]   =  800000,
-		[VDD_DIG_LOW]     =  850000,
-		[VDD_DIG_NOM_LOW] =  900000,
-		[VDD_DIG_NOMINAL] =  950000,
-		[VDD_DIG_HIGH]    = 1050000,
-		[VDD_DIG_HIGHER]  = 1100000
-	};
 	return rpm_vreg_set_voltage(RPM_VREG_ID_PM8921_S3, RPM_VREG_VOTER3,
 				    vdd_uv[level], 1150000, 1);
 }

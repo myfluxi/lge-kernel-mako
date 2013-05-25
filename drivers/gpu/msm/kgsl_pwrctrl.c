@@ -17,6 +17,7 @@
 #include <linux/pm_runtime.h>
 #include <mach/msm_iomap.h>
 #include <mach/msm_bus.h>
+#include <mach/clk.h>
 #include <linux/ktime.h>
 
 #include "kgsl.h"
@@ -618,6 +619,55 @@ static int kgsl_pwrctrl_gpu_available_frequencies_show(
 	return num_chars;
 }
 
+static int kgsl_pwrctrl_gpu_uv_store(struct device *dev,
+					struct device_attribute *attr,
+					const char *buf, size_t count)
+{
+	struct kgsl_device *device = kgsl_device_from_dev(dev);
+	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
+	unsigned int val;
+	int i, ret = 0;
+	char size[pwr->num_pwrlevels + 1];
+
+	if (!buf)
+                return -EINVAL;
+
+	for (i = 1; i < pwr->num_pwrlevels + 1; i++) {
+                ret = sscanf(buf, "%d", &val);
+                if (!ret)
+                        return -EINVAL;
+
+                if (val > GPU_VDD_MAX)
+                        val = GPU_VDD_MAX;
+                else if (val < GPU_VDD_MIN)
+                        val = GPU_VDD_MIN;
+
+                vdd_uv[i] = val * 1000;
+
+                ret = sscanf(buf, "%s", size);
+                buf += strlen(size) + 1;
+        }
+
+        return ret;
+}
+
+static int kgsl_pwrctrl_gpu_uv_show(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
+{
+	struct kgsl_device *device = kgsl_device_from_dev(dev);
+	struct kgsl_pwrctrl *pwr = &device->pwrctrl;
+	int i, j, len = 0;
+
+	for (i = pwr->min_pwrlevel, j = 1; j < pwr->num_pwrlevels; i--, j++) {
+                len += sprintf(buf + len, "%3dMhz: %4imV\n",
+                        pwr->pwrlevels[i].gpu_freq / 1000000,
+                        vdd_uv[j] / 1000);
+        }
+
+        return len;
+}
+
 DEVICE_ATTR(gpuclk, 0644, kgsl_pwrctrl_gpuclk_show, kgsl_pwrctrl_gpuclk_store);
 DEVICE_ATTR(max_gpuclk, 0644, kgsl_pwrctrl_max_gpuclk_show,
 	kgsl_pwrctrl_max_gpuclk_store);
@@ -643,6 +693,9 @@ DEVICE_ATTR(thermal_pwrlevel, 0644,
 DEVICE_ATTR(num_pwrlevels, 0444,
 	kgsl_pwrctrl_num_pwrlevels_show,
 	NULL);
+DEVICE_ATTR(UV_mV_table, 0644,
+	kgsl_pwrctrl_gpu_uv_show,
+	kgsl_pwrctrl_gpu_uv_store);
 
 static const struct device_attribute *pwrctrl_attr_list[] = {
 	&dev_attr_gpuclk,
@@ -656,6 +709,7 @@ static const struct device_attribute *pwrctrl_attr_list[] = {
 	&dev_attr_min_pwrlevel,
 	&dev_attr_thermal_pwrlevel,
 	&dev_attr_num_pwrlevels,
+	&dev_attr_UV_mV_table,
 	NULL
 };
 
