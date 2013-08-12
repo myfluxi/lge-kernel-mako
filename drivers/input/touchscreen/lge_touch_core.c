@@ -30,8 +30,6 @@
 #include <linux/time.h>
 #include <linux/version.h>
 #include <linux/atomic.h>
-#include <linux/cpufreq.h>
-
 #include <linux/gpio.h>
 
 #include <linux/input/lge_touch_core.h>
@@ -83,25 +81,6 @@ struct pointer_trace {
 
 static struct pointer_trace tr_data[MAX_TRACE];
 static int tr_last_index;
-#endif
-
-#ifdef CONFIG_LGE_TOUCH_BOOST
-#define TOUCH_EVENT_COUNT	10
-#define BOOST_TIMER_EXPIRY	25	/* ms */
-extern void ondemand_touchboost(void);
-extern void cpufreq_interactive_touchboost(void);
-extern void conservative_touchboost(void);
-
-struct boost_vals {
-	unsigned int count;
-	unsigned int evt_cnt;
-	unsigned int timer_exp;
-};
-
-static struct boost_vals boost;
-static struct timer_list boost_timer;
-static void boost_timer_off(struct work_struct *boost_timer_off_work);
-static DECLARE_WORK(boost_timer_off_work, boost_timer_off);
 #endif
 
 #if defined(CONFIG_HAS_EARLYSUSPEND)
@@ -762,30 +741,6 @@ static void dump_pointer_trace(void)
 }
 #endif
 
-#ifdef CONFIG_LGE_TOUCH_BOOST
-static void touchboost(void)
-{
-	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
-
-	if (!strnicmp(policy->governor->name, "ondemand", CPUFREQ_NAME_LEN))
-		ondemand_touchboost();
-	else if (!strnicmp(policy->governor->name, "interactive", CPUFREQ_NAME_LEN))
-		cpufreq_interactive_touchboost();
-	else if (!strnicmp(policy->governor->name, "conservative", CPUFREQ_NAME_LEN))
-		conservative_touchboost();
-}
-
-static void boost_timer_off(struct work_struct *boost_timer_off_work)
-{
-	boost.count = 0;
-}
-
-static void handle_boost(unsigned long data)
-{
-	schedule_work(&boost_timer_off_work);
-}
-#endif
-
 static void touch_input_report(struct lge_touch_data *ts)
 {
 	int	id;
@@ -886,15 +841,6 @@ static void touch_work_func(struct work_struct *work)
 	}
 
 	touch_input_report(ts);
-
-#ifdef CONFIG_LGE_TOUCH_BOOST
-	boost.count++;
-	if (boost.count >= boost.evt_cnt) {
-		pr_debug("lge_touch_core: touchboost\n");
-		touchboost();
-	} else
-		mod_timer(&boost_timer, jiffies + msecs_to_jiffies(boost.timer_exp)); 
-#endif
 
 out:
 	if (likely(ts->pdata->role->operation_mode == INTERRUPT_MODE)) {
@@ -1612,33 +1558,6 @@ static ssize_t show_charger(struct lge_touch_data *ts, char *buf)
 	return sprintf(buf, "%d\n", ts->charger_type);
 }
 
-#ifdef CONFIG_LGE_TOUCH_BOOST
-static ssize_t show_touchboost_trigger(struct lge_touch_data *ts, char *buf)
-{
-	int ret = 0;
-
-	ret = sprintf(buf, "%d %d\n", boost.evt_cnt, boost.timer_exp);
-
-	return ret;
-}
-
-static ssize_t store_touchboost_trigger(struct lge_touch_data *ts, const char *buf,
-			     size_t count)
-{
-	int ret;
-	unsigned int value[2];
-
-	ret = sscanf(buf, "%d %d", &value[0], &value[1]);
-	if (ret != ARRAY_SIZE(value))
-		return -EINVAL;
-
-	boost.evt_cnt = value[0];
-	boost.timer_exp = value[1];
-
-	return ret;
-}
-#endif
-
 static LGE_TOUCH_ATTR(platform_data, S_IRUGO | S_IWUSR, show_platform_data, NULL);
 static LGE_TOUCH_ATTR(firmware, S_IRUGO | S_IWUSR, show_fw_info, store_fw_upgrade);
 static LGE_TOUCH_ATTR(fw_ver, S_IRUGO | S_IWUSR, show_fw_ver, NULL);
@@ -1650,10 +1569,6 @@ static LGE_TOUCH_ATTR(show_touches, S_IRUGO | S_IWUSR, show_show_touches, store_
 static LGE_TOUCH_ATTR(pointer_location, S_IRUGO | S_IWUSR, show_pointer_location,
 					store_pointer_location);
 static LGE_TOUCH_ATTR(charger, S_IRUGO | S_IWUSR, show_charger, NULL);
-#ifdef CONFIG_LGE_TOUCH_BOOST
-	LGE_TOUCH_ATTR(touchboost_trigger, S_IRUGO | S_IWUSR, show_touchboost_trigger,
-					store_touchboost_trigger);
-#endif
 
 static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_platform_data.attr,
@@ -1666,9 +1581,6 @@ static struct attribute *lge_touch_attribute_list[] = {
 	&lge_touch_attr_show_touches.attr,
 	&lge_touch_attr_pointer_location.attr,
 	&lge_touch_attr_charger.attr,
-#ifdef CONFIG_LGE_TOUCH_BOOST
-	&lge_touch_attr_touchboost_trigger.attr,
-#endif
 	NULL,
 };
 
@@ -1985,12 +1897,6 @@ static int touch_probe(struct i2c_client *client,
 		ts->accuracy_filter.touch_max_count = one_sec / 2;
 	}
 
-#ifdef CONFIG_LGE_TOUCH_BOOST
-	boost.evt_cnt = TOUCH_EVENT_COUNT;
-	boost.timer_exp = BOOST_TIMER_EXPIRY;
-	setup_timer(&boost_timer, handle_boost, 0);
-#endif
-
 #if defined(CONFIG_HAS_EARLYSUSPEND)
 	ts->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
 	ts->early_suspend.suspend = touch_early_suspend;
@@ -2080,9 +1986,6 @@ static int touch_remove(struct i2c_client *client)
 		hrtimer_cancel(&ts->timer);
 	}
 
-#ifdef CONFIG_LGE_TOUCH_BOOST
-	del_timer(&boost_timer);
-#endif
 	input_unregister_device(ts->input_dev);
 	input_free_device(ts->input_dev);
 	kfree(ts);

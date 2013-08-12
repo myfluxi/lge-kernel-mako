@@ -188,14 +188,6 @@ static struct notifier_block dbs_cpufreq_notifier_block = {
 	.notifier_call = dbs_cpufreq_notifier
 };
 
-#ifdef CONFIG_LGE_TOUCH_BOOST
-void conservative_touchboost(void)
-{
-	dbs_tuners_ins.boosted = 1;
-	freq_boosted_time = ktime_to_us(ktime_get());
-}
-#endif
-
 int cpufreq_conservative_load_tuning(unsigned int level)
 {
 	if (level == cur_tune_level)
